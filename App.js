@@ -11,8 +11,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // components:
 import Calendar from './components/Calendar';
 import AddEvent from './components/AddEvent';
-// SQLite:
-import * as SQLite from 'expo-sqlite';
+
 
 
 // ladatut:
@@ -34,6 +33,10 @@ import * as SQLite from 'expo-sqlite';
 //     ^^^
 //    tarvitaan, koska react-native-big-calendar on kirjoitettu TypeScriptillä.
 //    tslib sisältää apufunktiot, joita TypeScript-koodi tarvitsee toimiakseen oikein JavaScript-ympäristössä.
+//
+// npx expo install @react-native-picker/picker
+// npx expo install @react-native-community/datetimepicker
+
 
 
 
@@ -42,9 +45,6 @@ const Stack = createNativeStackNavigator();
 
 
 export default function App() {
-
-
-  // <SQLite.SQLiteProvider> /// pois ehk
   return (
     //<SQLite.SQLiteProvider>
     <SafeAreaProvider>

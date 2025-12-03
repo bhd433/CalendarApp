@@ -20,13 +20,9 @@ export default function Calendar({ navigation }) {
 
     const [events, setEvents] = useState([]);
 
-
+    // db
     const db = SQLite.openDatabaseSync('calendardb');
 
-    //const events = [
-    //    { start: new Date(2025, 11, 1, 9, 0), end: new Date(2025, 11, 1, 13, 0), title: 'Aamupalaveri' },
-    //    { start: new Date(2025, 11, 2, 11, 0), end: new Date(2025, 11, 2, 12, 0), title: 'Projektikokous' },
-    //];
 
     // database aloitus funktio
     const dbinit = async () => {
@@ -52,12 +48,29 @@ export default function Calendar({ navigation }) {
     const update = async () => {
         try {
             const database_data = await db.getAllAsync('SELECT * FROM events');
-            setEvents(database_data);
+            const formattedEvents = database_data.map(ev => ({
+                ...ev,
+                start: new Date(ev.start),
+                end: new Date(ev.end),
+            }));
+            setEvents(formattedEvents);
         } catch (error) {
             console.error('Tapahtumien haku epäonnistui', error);
         }
     };
 
+
+    // database poisto funktio
+    const remove = async (id) => {
+        try {
+            await db.runAsync(
+                'DELETE from events where id=?', id
+            );
+            await update();
+        } catch (error) {
+            console.error('Tapahtuman poisto epäonnistui', error);
+        }
+    }
 
 
     // databasen aloitus + haetaan säätiedot käyttäjän sijainnille
@@ -127,15 +140,15 @@ export default function Calendar({ navigation }) {
 
 
     return (
+        // taustakuva
         <ImageBackground
             source={require('./bricks.png')}
             style={styles.background}
         >
             <SafeAreaView style={styles.container}>
 
-
                 <View style={styles.calendarWrapper}>
-                    <Weather dailyWeather={weatherData} gutterWidth={50}/> {/* sää ikonit luodaan Weather.js komponentin avulla*/}
+                    <Weather dailyWeather={weatherData} gutterWidth={50} /> {/* sää ikonit luodaan Weather.js komponentin avulla*/}
                     <BigCalendar
                         style={{ flex: 1 }}
                         locale="fi"
@@ -148,13 +161,13 @@ export default function Calendar({ navigation }) {
                         date={new Date()}
                         weekStartsOn={1}
                         theme={customTheme}
-                        eventCellStyle={{
-                            backgroundColor: 'rgba(92, 202, 253, 1)',
+                        eventCellStyle={event => ({
+                            backgroundColor: event.color || 'rgba(92, 202, 253, 1)',
                             borderRadius: 0,
                             paddingTop: 0,
                             paddingBottom: 0,
+                        })}
 
-                        }}
 
                         // kun tapahtumaa painetaan niin tämä koodi suoritetaan
                         onPressEvent={(event) => {
@@ -166,10 +179,9 @@ export default function Calendar({ navigation }) {
 
                 <Button
                     mode='contained'
-                    title="Lisää tapahtuma"
                     buttonColor="lightblue"
                     textColor="black"
-                    onPress={() => navigation.navigate('Lisää tapahtuma')}
+                    onPress={() => navigation.navigate('Lisää tapahtuma', { updateEvents: update })}
                     icon="plus"
                     style={{ marginTop: 15 }}
                 >
@@ -185,9 +197,19 @@ export default function Calendar({ navigation }) {
                 >
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>{selectedEvent?.title}</Text>
-                            <Text>Alkaa: {selectedEvent?.start.toLocaleString()}</Text>
-                            <Text>Loppuu: {selectedEvent?.end.toLocaleString()}</Text>
+                            <Text>
+                                Nimi: {selectedEvent && selectedEvent.title ? selectedEvent.title : 'Ei tietoa'}
+                            </Text>
+                            <Text>
+                                Kuvaus: {selectedEvent && selectedEvent.description ? selectedEvent.description : 'Ei tietoa'}
+                            </Text>
+                            <Text>
+                                Alkaa: {selectedEvent && selectedEvent.start ? new Date(selectedEvent.start).toLocaleString() : 'Ei tietoa'}
+                            </Text>
+                            <Text>
+                                Loppuu: {selectedEvent && selectedEvent.end ? new Date(selectedEvent.end).toLocaleString() : 'Ei tietoa'}
+                            </Text>
+
 
                             <View style={{ flexDirection: 'row', marginTop: 15, justifyContent: 'space-between' }}>
                                 <Button
@@ -204,10 +226,13 @@ export default function Calendar({ navigation }) {
                                     mode="contained"
                                     buttonColor="red"
                                     textColor="black"
-                                    onPress={() => {
-                                        // poista tapahtuma -logiikka tähän
-                                        console.log(weatherData)
-                                        setModalVisible(false);
+                                    onPress={async () => {
+                                        try {
+                                            await remove(selectedEvent.id); // odotetaan poistoa
+                                            setModalVisible(false); // suljetaan modal vasta poiston jälkeen
+                                        } catch (error) {
+                                            console.error('Tapahtuman poisto epäonnistui:', error);
+                                        }
                                     }}
                                     icon="trash-can-outline"
                                     style={{ flex: 1, marginLeft: 5 }}
@@ -219,7 +244,7 @@ export default function Calendar({ navigation }) {
                     </View>
                 </Modal>
             </SafeAreaView>
-        </ImageBackground>
+        </ImageBackground >
     )
 }
 

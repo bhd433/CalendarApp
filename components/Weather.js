@@ -11,13 +11,15 @@ export default function Weather({ dailyWeather, gutterWidth = 0 }) {
   if (!dailyWeather) return null;
 
   return (
+    // mäppäys
     <View style={{ flexDirection: 'row', paddingLeft: gutterWidth }}>
       {dailyWeather.time.map((date, index) => {
-        const icon = weatherIcons[dailyWeather.weathercode[index]] || '❓';
+        const icon = weatherIcons[dailyWeather.weathercode[index]] ?? '?';
 
+        // palautetaan icon
         return (
           <View key={date} style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 24 }}>{icon}</Text>
+            <Text style={{ fontSize: 24 }}>{icon ?? '?'}</Text>
           </View>
         );
       })}
